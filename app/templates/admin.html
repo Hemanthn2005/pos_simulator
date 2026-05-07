@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>POS Admin — Sales Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{--bg:#0f172a;--card:#1e293b;--accent:#38bdf8;--green:#34d399;--amber:#fbbf24;--pink:#f472b6;--text:#e2e8f0;--muted:#64748b;--border:#334155}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    header{background:var(--card);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+    header h1{font-family:"Space Mono",monospace;font-size:1rem;letter-spacing:.05em}
+    header h1 span{color:var(--accent)}
+    .back-link{font-size:.8rem;color:var(--muted);text-decoration:none}
+    .back-link:hover{color:var(--accent)}
+    .container{max-width:1100px;margin:0 auto;padding:2rem}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+    .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+    .kpi-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem}
+    .kpi-value{font-family:"Space Mono",monospace;font-size:1.4rem;font-weight:700}
+    .green{color:var(--green)}.blue{color:var(--accent)}.amber{color:var(--amber)}.pink{color:var(--pink)}
+    .charts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+    .chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+    .chart-card h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1rem}
+    .table-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem}
+    .table-card h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:1rem}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;font-size:.72rem;color:var(--muted);font-weight:700;padding:.5rem .75rem;border-bottom:1px solid var(--border)}
+    td{padding:.6rem .75rem;font-size:.82rem;border-bottom:1px solid var(--border)}
+    tr:last-child td{border-bottom:none}
+    td:last-child,th:last-child{text-align:right;font-family:"Space Mono",monospace}
+    .no-data{text-align:center;color:var(--muted);padding:2rem;font-size:.9rem}
+  </style>
+</head>
+<body>
+<header>
+  <h1>POS <span>ADMIN</span> — Sales Dashboard</h1>
+  <a class="back-link" href="/">← Back to POS</a>
+</header>
+<div class="container">
+  <div class="kpi-grid" id="kpi-grid"><div class="kpi-card"><div class="kpi-label">Loading...</div></div></div>
+  <div class="charts">
+    <div class="chart-card"><h3>Revenue by Category</h3><canvas id="catChart"></canvas></div>
+    <div class="chart-card"><h3>Payment Methods</h3><canvas id="payChart"></canvas></div>
+  </div>
+  <div class="table-card">
+    <h3>Top Products by Revenue</h3>
+    <table><thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+    <tbody id="top-table"><tr><td colspan="4" class="no-data">No sales yet. Make some transactions first.</td></tr></tbody></table>
+  </div>
+</div>
+<script>
+async function load(){
+  try{
+    const res=await fetch("/api/reports/summary");
+    const d=await res.json();
+    const s=d.daily_summary;
+    document.getElementById("kpi-grid").innerHTML=`
+      <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value green">₹${s.total_revenue.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Transactions</div><div class="kpi-value blue">${s.total_transactions}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg Bill Value</div><div class="kpi-value amber">₹${s.average_bill_value.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Items Sold</div><div class="kpi-value pink">${s.total_items_sold}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Tax Collected</div><div class="kpi-value blue">₹${s.total_tax_collected.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Discounts Given</div><div class="kpi-value amber">₹${s.total_discount_given.toFixed(2)}</div></div>
+    `;
+    const cats=d.category_breakdown;
+    if(cats.length){
+      new Chart(document.getElementById("catChart"),{
+        type:"doughnut",
+        data:{labels:cats.map(c=>c.category),datasets:[{data:cats.map(c=>c.revenue),backgroundColor:["#38bdf8","#34d399","#fbbf24","#f472b6","#818cf8"],borderWidth:0}]},
+        options:{plugins:{legend:{labels:{color:"#e2e8f0",font:{size:11}}}}}
+      });
+    }
+    const pay=d.payment_split;
+    if(Object.keys(pay).length){
+      new Chart(document.getElementById("payChart"),{
+        type:"bar",
+        data:{
+          labels:Object.keys(pay).map(k=>k.toUpperCase()),
+          datasets:[{label:"Revenue (₹)",data:Object.values(pay).map(v=>v.revenue),backgroundColor:"#38bdf8",borderRadius:8}]
+        },
+        options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#64748b"}},y:{ticks:{color:"#64748b",callback:v=>"₹"+v}}}}
+      });
+    }
+    const top=d.top_products;
+    if(top.length){
+      document.getElementById("top-table").innerHTML=top.map((p,i)=>`
+        <tr><td>${i+1}</td><td>${p.product_name}</td><td>${p.units_sold}</td><td>₹${p.revenue.toFixed(2)}</td></tr>
+      `).join("");
+    }
+  }catch(e){console.error(e);}
+}
+load();
+setInterval(load, 10000); // auto-refresh every 10s
+</script>
+</body>
+</html>

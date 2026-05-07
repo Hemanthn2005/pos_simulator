@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Admin — Bills History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet"/>
+    <style>
+        :root{--bg:#0f172a;--card:#1e293b;--accent:#38bdf8;--green:#34d399;--amber:#fbbf24;--text:#e2e8f0;--muted:#64748b;--border:#334155}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        header{background:var(--card);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+        header h1{font-family:"Space Mono",monospace;font-size:1rem}
+        header h1 span{color:var(--accent)}
+        nav{display:flex;gap:1rem}
+        nav a{color:var(--muted);text-decoration:none;font-size:0.8rem;font-weight:700}
+        nav a:hover,.nav-active{color:var(--accent)}
+        .container{max-width:1200px;margin:0 auto;padding:2rem}
+        table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden}
+        th{background:var(--border);text-align:left;padding:0.75rem 1rem;font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase}
+        td{padding:0.75rem 1rem;font-size:0.82rem;border-bottom:1px solid var(--border)}
+        tr:last-child td{border-bottom:none}
+        tr:hover{background:rgba(56,189,248,0.05)}
+        .badge{padding:0.2rem 0.6rem;border-radius:100px;font-size:0.7rem;font-weight:700}
+        .badge-cash{background:#dcfce7;color:#16a34a}
+        .badge-card{background:#dbeafe;color:#2563eb}
+        .badge-upi{background:#fef3c7;color:#d97706}
+        .amount{font-family:"Space Mono",monospace;font-weight:700}
+        .action-btn{color:var(--accent);text-decoration:none;font-size:0.78rem;font-weight:700}
+        .no-data{text-align:center;padding:3rem;color:var(--muted)}
+    </style>
+</head>
+<body>
+<header>
+    <h1>POS <span>ADMIN</span> — Bills History</h1>
+    <nav>
+        <a href="/">POS Terminal</a>
+        <a href="/admin">Dashboard</a>
+        <a href="/bills" class="nav-active">Bills</a>
+        <a href="/logout">Logout</a>
+    </nav>
+</header>
+<div class="container">
+    <table>
+        <thead>
+            <tr>
+                <th>Receipt ID</th>
+                <th>Date & Time</th>
+                <th>Items</th>
+                <th>Payment</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if bills %}
+                {% for bill in bills %}
+                <tr>
+                    <td><code>{{ bill.receipt_id }}</code></td>
+                    <td>{{ bill.timestamp }}</td>
+                    <td>{{ bill.total_items }}</td>
+                    <td>
+                        <span class="badge badge-{{ bill.payment_method }}">
+                            {{ bill.payment_method.upper() }}
+                        </span>
+                    </td>
+                    <td class="amount">₹{{ "%.2f"|format(bill.grand_total) }}</td>
+                    <td><span class="badge badge-cash">✓ {{ bill.status }}</span></td>
+                    <td>
+                        <a href="/api/bills/{{ bill.receipt_id }}" class="action-btn" target="_blank">
+                            View
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="no-data">
+                        📋 No bills yet. Start selling!
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

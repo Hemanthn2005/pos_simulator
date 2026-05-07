@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZEN POS v2.0</title>
+  <style>
+    :root {
+      --bg: #071632;
+      --panel: #020d25;
+      --card: #1a2943;
+      --card-border: #273750;
+      --text: #e6edf7;
+      --muted: #9db0cf;
+      --brand: #f4f7ff;
+      --accent: #2d73ff;
+      --danger: #ff4d61;
+      --success: #20d07a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #081635 0%, #06122a 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 0;
+    }
+    .catalog {
+      border-right: 1px solid #1d2b44;
+      padding: 22px;
+      overflow: auto;
+    }
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .brand {
+      font-size: 38px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--brand);
+      margin-right: auto;
+    }
+    .search {
+      width: 300px;
+      background: #091a39;
+      border: 1px solid #41506c;
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+    .search::placeholder { color: #7890b2; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #fff;
+      background: #26324a;
+      font-weight: 600;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-primary { background: var(--accent); }
+    .btn-link { background: #1d2a45; text-decoration: none; display: inline-flex; align-items: center; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      min-height: 120px;
+      padding: 14px 12px;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .card:hover { border-color: #4d6288; }
+    .card .name { font-size: 28px; font-weight: 600; margin-top: 8px; line-height: 1.2; }
+    .card .price { color: #50a3ff; margin-top: 6px; font-size: 28px; font-weight: 700; }
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 0;
+      background: var(--danger);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .add-card {
+      border: 2px dashed #2f4262;
+      background: rgba(27, 44, 75, 0.3);
+    }
+    .add-card .plus {
+      font-size: 52px;
+      color: #a075ff;
+      line-height: 1;
+    }
+    .add-card .name { color: #f2f7ff; font-size: 30px; }
+    .add-card .sub { color: #5e92ff; margin-top: 4px; font-size: 22px; font-weight: 600; }
+
+    .order {
+      background: #020b22;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #1b2842;
+    }
+    .order-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #1f2a44;
+      padding-bottom: 10px;
+    }
+    .order-title { font-size: 30px; font-weight: 700; }
+    .clear-btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      background: var(--danger);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cart-list {
+      flex: 1;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .cart-empty { color: #b5c5df; margin-top: 10px; font-size: 30px; }
+    .cart-item {
+      border-bottom: 1px solid #1b2944;
+      padding: 8px 0;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .qty {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .qty button {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      border: 0;
+      background: #20304f;
+      color: #fff;
+      cursor: pointer;
+    }
+    .totals {
+      border-top: 1px dashed #2c3b57;
+      padding-top: 12px;
+      margin-top: 8px;
+      color: #a7b8d6;
+      font-size: 25px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+    }
+    .total {
+      margin-top: 8px;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--success);
+    }
+    .payment {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .payment button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cash { background: #334761; color: white; }
+    .upi { background: var(--accent); color: white; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(1, 7, 20, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.show { display: flex; }
+    .dialog {
+      width: 420px;
+      max-width: 100%;
+      background: #0d1f3e;
+      border: 1px solid #344a71;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .dialog h3 { margin-bottom: 12px; }
+    .field {
+      margin-bottom: 10px;
+    }
+    .field label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: #9eb3d5;
+    }
+    .field input {
+      width: 100%;
+      background: #091731;
+      border: 1px solid #3a4d71;
+      border-radius: 8px;
+      padding: 9px 10px;
+      color: #fff;
+      outline: none;
+    }
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .receipt {
+      font-size: 13px;
+      color: #dce7fb;
+      line-height: 1.5;
+      max-height: 68vh;
+      overflow: auto;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="catalog">
+      <div class="top-row">
+        <div class="brand">ZEN POS v2.0</div>
+        <input id="search" class="search" placeholder="Scan Barcode or Search...">
+      </div>
+      <div class="actions">
+        <a class="btn btn-link" href="/admin">Reports</a>
+        <a class="btn btn-link" href="/bills">Bills</a>
+        <a class="btn btn-link" href="/logout">Logout</a>
+      </div>
+      <div class="grid" id="products"></div>
+    </section>
+
+    <aside class="order">
+      <div class="order-header">
+        <div class="order-title">Current Order</div>
+        <button class="clear-btn" onclick="clearCart()">Clear All</button>
+      </div>
+      <div id="cart-list" class="cart-list">
+        <p class="cart-empty">Cart is empty</p>
+      </div>
+      <div class="totals">
+        <div class="row"><span>Subtotal</span><span id="subtotal">₹0.00</span></div>
+        <div class="row"><span>GST (18%)</span><span id="gst">₹0.00</span></div>
+        <div class="row total"><span>Total</span><span id="total">₹0.00</span></div>
+      </div>
+      <div class="payment">
+        <button class="cash" onclick="checkout('cash')">CASH</button>
+        <button class="upi" onclick="checkout('upi')">UPI/CARD</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="modal" id="product-modal">
+    <div class="dialog">
+      <h3>Add New Item</h3>
+      <div class="field"><label>Name</label><input id="new-name"></div>
+      <div class="field"><label>Category</label><input id="new-category" value="Snacks"></div>
+      <div class="field"><label>Price</label><input id="new-price" type="number" step="0.01"></div>
+      <div class="field"><label>Stock</label><input id="new-stock" type="number" value="20"></div>
+      <div class="field"><label>Emoji</label><input id="new-emoji" value="📦"></div>
+      <div class="dialog-actions">
+        <button class="btn" onclick="toggleModal('product-modal', false)">Cancel</button>
+        <button class="btn btn-primary" onclick="createProduct()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="receipt-modal">
+    <div class="dialog">
+      <h3>Payment Successful</h3>
+      <div class="receipt" id="receipt"></div>
+      <div class="dialog-actions">
+        <button class="btn btn-primary" onclick="toggleModal('receipt-modal', false)">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SESSION_ID = "session-" + Math.random().toString(36).slice(2, 10);
+    let products = [];
+    let allProducts = [];
+    let cartState = { items: [], subtotal: 0, tax_amount: 0, grand_total: 0, item_count: 0 };
+
+    function toggleModal(id, show) {
+      document.getElementById(id).classList.toggle("show", show);
+    }
+
+    function currency(v) {
+      return "₹" + Number(v || 0).toFixed(2);
+    }
+
+    async function fetchProducts(query = "") {
+      const endpoint = query
+        ? `/api/products/search?q=${encodeURIComponent(query)}`
+        : "/api/products";
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      return data.products || [];
+    }
+
+    function productCard(p) {
+      return `
+      <div class="card" onclick="addToCart('${p.id}')">
+        <button class="delete-btn" title="Delete item" onclick="deleteProduct(event, '${p.id}')">×</button>
+        <div style="font-size:36px;">${p.image_emoji || "📦"}</div>
+        <div class="name">${p.name}</div>
+        <div class="price">${currency(p.price)}</div>
+      </div>`;
+    }
+
+    function renderProducts() {
+      const root = document.getElementById("products");
+      root.innerHTML = `
+        <div class="card add-card" onclick="toggleModal('product-modal', true)">
+          <div class="plus">+</div>
+          <div class="name">Add New</div>
+          <div class="sub">Create Item</div>
+        </div>
+        ${products.map(productCard).join("")}
+      `;
+    }
+
+    function renderCart() {
+      document.getElementById("subtotal").textContent = currency(cartState.subtotal);
+      document.getElementById("gst").textContent = currency(cartState.tax_amount);
+      document.getElementById("total").textContent = currency(cartState.grand_total);
+
+      const root = document.getElementById("cart-list");
+      if (!cartState.items || cartState.items.length === 0) {
+        root.innerHTML = `<p class="cart-empty">Cart is empty</p>`;
+        return;
+      }
+      root.innerHTML = cartState.items.map((item) => `
+        <div class="cart-item">
+          <div>
+            <div>${item.product_name}</div>
+            <div style="font-size:12px;color:#8ba3ca;">${currency(item.unit_price)} each</div>
+          </div>
+          <div class="qty">
+            <button onclick="changeQty('${item.product_id}', ${item.quantity - 1})">-</button>
+            <span>${item.quantity}</span>
+            <button onclick="changeQty('${item.product_id}', ${item.quantity + 1})">+</button>
+          </div>
+          <div>${currency(item.line_total)}</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadAll() {
+      allProducts = await fetchProducts();
+      products = allProducts;
+      renderProducts();
+      await refreshCart();
+    }
+
+    async function refreshCart() {
+      const res = await fetch(`/api/cart/${SESSION_ID}`);
+      cartState = await res.json();
+      renderCart();
+    }
+
+    async function addToCart(productId) {
+      const res = await fetch(`/api/cart/${SESSION_ID}/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: productId, quantity: 1 })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to add item");
+        return;
+      }
+      cartState = data.cart;
+      renderCart();
+    }
+
+    async function changeQty(productId, quantity) {
+      const res = await fetch(`/api/cart/${SESSION_ID}/update`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: productId, quantity })
+      });
+      const data = await res.json();
+      cartState = data.cart;
+      renderCart();
+    }
+
+    async function clearCart() {
+      const res = await fetch(`/api/cart/${SESSION_ID}/clear`, { method: "DELETE" });
+      const data = await res.json();
+      cartState = data.cart;
+      renderCart();
+    }
+
+    async function createProduct() {
+      const payload = {
+        name: document.getElementById("new-name").value.trim(),
+        category: document.getElementById("new-category").value.trim(),
+        price: parseFloat(document.getElementById("new-price").value),
+        stock: parseInt(document.getElementById("new-stock").value || "0", 10),
+        image_emoji: document.getElementById("new-emoji").value.trim() || "📦"
+      };
+      if (!payload.name || !payload.price || payload.price <= 0) {
+        alert("Enter valid name and price");
+        return;
+      }
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to create product");
+        return;
+      }
+      toggleModal("product-modal", false);
+      document.getElementById("new-name").value = "";
+      document.getElementById("new-price").value = "";
+      await loadAll();
+    }
+
+    async function deleteProduct(event, productId) {
+      event.stopPropagation();
+      if (!confirm("Delete this product?")) return;
+      const res = await fetch(`/api/products/${productId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Delete failed");
+        return;
+      }
+      await loadAll();
+    }
+
+    async function checkout(method) {
+      if (!cartState.items || cartState.items.length === 0) {
+        alert("Cart is empty");
+        return;
+      }
+      let tendered = cartState.grand_total;
+      if (method === "cash") {
+        const input = prompt(`Total is ${currency(cartState.grand_total)}. Enter cash received:`, `${cartState.grand_total.toFixed(2)}`);
+        if (input === null) return;
+        tendered = Number(input);
+        if (!Number.isFinite(tendered) || tendered < cartState.grand_total) {
+          alert("Insufficient cash amount.");
+          return;
+        }
+      }
+      const res = await fetch(`/api/checkout/${SESSION_ID}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_method: method, amount_tendered: tendered })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Checkout failed");
+        return;
+      }
+      const r = data.receipt;
+      document.getElementById("receipt").textContent =
+        `Receipt: ${r.receipt_id}\n` +
+        `Date: ${r.timestamp}\n` +
+        `Cashier: ${r.cashier}\n\n` +
+        r.items.map(i => `${i.product_name} x${i.quantity}  ${currency(i.line_total)}`).join("\n") +
+        `\n\nSubtotal: ${currency(r.subtotal)}\n` +
+        `GST: ${currency(r.tax_amount)}\n` +
+        `Total: ${currency(r.grand_total)}\n` +
+        `Payment: ${r.payment_method.toUpperCase()}\n` +
+        `Change: ${currency(r.change_returned)}`;
+      toggleModal("receipt-modal", true);
+      await loadAll();
+    }
+
+    document.getElementById("search").addEventListener("input", async (e) => {
+      const q = e.target.value.trim();
+      products = q ? await fetchProducts(q) : allProducts;
+      renderProducts();
+    });
+
+    loadAll();
+  </script>
+</body>
+</html>
